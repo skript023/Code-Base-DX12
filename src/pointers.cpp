@@ -12,32 +12,13 @@ namespace big
 		if (!this->get_swapchain())
 			LOG(WARNING) << "Failed get swapchain";
 
-		m_resolution = (ScreenResolution*)(m_base_address + 0x3F54D58);//3F54D60
-		//m_character_name = (const char*)(m_base_address + 0x10BD223);
+		// m_resolution = (ScreenResolution*)(m_base_address + 0x3F54D58);//3F54D60
 		
-		/*
-		main_batch.add("Screen Resolution", "48 8D 0D ? ? ? ? BA ? ? ? ? FF 15 ? ? ? ? 48 8B D3 48 8B CF E8 ? ? ? ? 45 33 C0 33 D2 48 8B CF", [this](memory::handle ptr)
-		{
-			m_resolution = ptr.add(3).rip().add(0x1A8).as<iVector2*>();
-		});
-		*/
-
-		main_batch.add("Rest Buff", "F3 0F 11 4C 24 ? 55 48 8B EC 48 83 EC 40 4C 8B 41 50 0F 28 D1 4D 85 C0", [this](memory::handle ptr)
-		{
-			m_rest_buff = ptr.as<void*>();
-		});
-
-		main_batch.add("CKTDGUIDialog", "48 8B 84 C2 ? ? ? ? 0F B6 00 48 8B 84 C2 ? ? ? ? 48 83 C4 20 5B", [this](memory::handle ptr)
-		{
-			m_player_stats = ptr.add(4).rip().sub(0xC8).as<CKTDGUIDialog**>(); //from sub_359E1B08 to sub_359E1A40
-		});
-
-		main_batch.add("Return Address", "FF 23", [this](memory::handle ptr)
-		{
-			m_return_address = ptr.as<void*>();
-		});
+		// main_batch.add("Return Address", "FF 23", [this](memory::handle ptr)
+		// {
+		// 	m_return_address = ptr.as<void*>();
+		// });
 		
-
 		main_batch.run(memory::module(nullptr));
 
 		this->m_hwnd = FindWindow(WINDOW_CLASS, nullptr);
@@ -65,24 +46,26 @@ namespace big
 		window_class.hCursor = NULL;
 		window_class.hbrBackground = NULL;
 		window_class.lpszMenuName = NULL;
-		window_class.lpszClassName = L"Kiero";
+		window_class.lpszClassName = "Kiero";
 		window_class.hIconSm = NULL;
 
 		::RegisterClassEx(&window_class);
 
-		this->m_window = ::CreateWindow(window_class.lpszClassName, L"Kiero DirectX Window", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, window_class.hInstance, NULL);
+		this->m_window = ::CreateWindow(window_class.lpszClassName, "Kiero DirectX Window", WS_OVERLAPPEDWINDOW, 0, 0, 100, 100, NULL, NULL, window_class.hInstance, NULL);
 
 		if (this->m_window == NULL)
 		{
 			return false;
 		}
 
-		HMODULE d3d12_module = GetModuleHandle(L"d3d12.dll");
-		HMODULE dxgi_module = GetModuleHandle(L"dxgi.dll");
-		if (d3d12_module == NULL || dxgi_module)
+		HMODULE d3d12_module = GetModuleHandle("d3d12.dll");
+		HMODULE dxgi_module = GetModuleHandle("dxgi.dll");
+		if (d3d12_module == NULL || dxgi_module == NULL)
 		{
 			::DestroyWindow(this->m_window);
 			::UnregisterClass(window_class.lpszClassName, window_class.hInstance);
+
+			LOG(WARNING) << "Failed get dx12 & dxgi module";
 			
 			return false;
 		}
@@ -97,7 +80,7 @@ namespace big
 		}
 
 		IDXGIFactory* factory;
-		if (((long(__stdcall*)(const IID&, void**))(CreateDXGIFactory))(__uuidof(IDXGIFactory), (void**)&factory) < 0) 
+		if (((long(__stdcall*)(const IID&, void**))(create_dxgi_factory))(__uuidof(IDXGIFactory), (void**)&factory) < 0) 
 		{
 			::DestroyWindow(this->m_window);
 			::UnregisterClass(window_class.lpszClassName, window_class.hInstance);

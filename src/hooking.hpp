@@ -11,10 +11,12 @@ namespace big
 	{
 		static void* convert_thread_to_fiber(void* param);
 
-		static constexpr auto d3d9_endscene = 42;
-		static constexpr auto d3d9_reset = 16;
-		static HRESULT APIENTRY present(IDXGISwapChain3* _this, UINT SyncInterval, UINT Flags);
-		static HRESULT APIENTRY on_reset(IDXGISwapChain3* this_, UINT buffer_count, UINT width, UINT height, DXGI_FORMAT new_format, UINT swapchain_flags);
+		static constexpr auto present_index = 140;
+		static constexpr auto resizebuffer_index = 145;
+		static constexpr auto execute_command_list = 54;
+		static HRESULT APIENTRY swapchain_present(IDXGISwapChain3* _this, UINT SyncInterval, UINT Flags);
+		static HRESULT APIENTRY swapchain_resizebuffers(IDXGISwapChain3* this_, UINT buffer_count, UINT width, UINT height, DXGI_FORMAT new_format, UINT swapchain_flags);
+		static HRESULT APIENTRY swapchain_execute_command_list(ID3D12CommandQueue* queue, UINT num_command_list, ID3D12CommandList* command_list);
 
 		static LRESULT wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 		static BOOL set_cursor_pos(int x, int y);
@@ -42,9 +44,9 @@ namespace big
 
 		WNDPROC m_og_wndproc;
 
-		detour_hook m_end_scene_hook;
-		detour_hook m_on_reset_hook;
-		detour_hook m_rest_buff;
+		detour_hook m_on_present;
+		detour_hook m_resizebuffers;
+		detour_hook m_command_queue;
 		detour_hook m_set_cursor_pos_hook;
 	};
 

@@ -13,7 +13,7 @@ if(NOT imgui_POPULATED)
     file(GLOB SRC_IMGUI
         "${imgui_SOURCE_DIR}/*.cpp"
         "${imgui_SOURCE_DIR}/backends/imgui_impl_win32.cpp"
-        "${imgui_SOURCE_DIR}/backends/imgui_impl_dx9.cpp"
+        "${imgui_SOURCE_DIR}/backends/imgui_impl_dx12.cpp"
         "${imgui_SOURCE_DIR}/misc/cpp/imgui_stdlib.cpp"
     )
 

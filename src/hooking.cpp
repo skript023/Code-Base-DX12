@@ -12,9 +12,9 @@
 namespace big
 {
 	hooking::hooking() :
-		m_end_scene_hook("End Scene", g_pointers->m_device_methods[hooks::d3d9_endscene], &hooks::endscene),
-		m_on_reset_hook("D3D9 Reset", g_pointers->m_device_methods[hooks::d3d9_reset], &hooks::on_reset),
-		m_rest_buff("Natural Heal", g_pointers->m_rest_buff, &hooks::rest_buff),
+		m_on_present("Swapchain Present", g_pointers->m_swapchain_methods[hooks::present_index], &hooks::swapchain_present),
+		m_resizebuffers("Swapchain Resizebuffers", g_pointers->m_swapchain_methods[hooks::resizebuffer_index], &hooks::swapchain_resizebuffers),
+		m_command_queue("Swapchain Resizebuffers", g_pointers->m_swapchain_methods[hooks::resizebuffer_index], &hooks::swapchain_execute_command_list),
 		m_set_cursor_pos_hook("SetCursorPos", memory::module("user32.dll").get_export("SetCursorPos").as<void*>(), &hooks::set_cursor_pos)
 	{
 		g_hooking = this;
@@ -30,9 +30,9 @@ namespace big
 
 	void hooking::enable()
 	{
-		m_end_scene_hook.enable();
-		m_on_reset_hook.enable();
-		m_rest_buff.enable();
+		m_on_present.enable();
+		m_resizebuffers.enable();
+		m_command_queue.enable();
 		m_og_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&hooks::wndproc)));
 		m_set_cursor_pos_hook.enable();
 
@@ -45,9 +45,9 @@ namespace big
 
 		m_set_cursor_pos_hook.disable();
 		SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_og_wndproc));
-		m_on_reset_hook.disable();
-		m_end_scene_hook.disable();
-		m_rest_buff.disable();
+		m_command_queue.disable();
+		m_resizebuffers.disable();
+		m_on_present.disable();
 	}
 
 	minhook_keepalive::minhook_keepalive()
