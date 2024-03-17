@@ -14,7 +14,7 @@ namespace big
 	hooking::hooking() :
 		m_on_present("Swapchain Present", g_pointers->m_swapchain_methods[hooks::present_index], &hooks::swapchain_present),
 		m_resizebuffers("Swapchain Resizebuffers", g_pointers->m_swapchain_methods[hooks::resizebuffer_index], &hooks::swapchain_resizebuffers),
-		m_command_queue("Swapchain Resizebuffers", g_pointers->m_swapchain_methods[hooks::resizebuffer_index], &hooks::swapchain_execute_command_list),
+		m_command_queue("Swapchain Command List", g_pointers->m_swapchain_methods[hooks::execute_command_list], &hooks::swapchain_execute_command_list),
 		m_set_cursor_pos_hook("SetCursorPos", memory::module("user32.dll").get_export("SetCursorPos").as<void*>(), &hooks::set_cursor_pos)
 	{
 		g_hooking = this;
@@ -30,9 +30,9 @@ namespace big
 
 	void hooking::enable()
 	{
+		m_command_queue.enable();
 		m_on_present.enable();
 		m_resizebuffers.enable();
-		m_command_queue.enable();
 		m_og_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&hooks::wndproc)));
 		m_set_cursor_pos_hook.enable();
 
@@ -45,9 +45,9 @@ namespace big
 
 		m_set_cursor_pos_hook.disable();
 		SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_og_wndproc));
-		m_command_queue.disable();
 		m_resizebuffers.disable();
 		m_on_present.disable();
+		m_command_queue.disable();
 	}
 
 	minhook_keepalive::minhook_keepalive()

@@ -181,16 +181,25 @@ namespace big
 			return false;
 		}
 
-		::memcpy(this->m_swapchain_methods, *(void***)this->m_swapchain, sizeof(m_swapchain_methods));
+		::memcpy(this->m_swapchain_methods, *(void***)device, 44 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44, *(void***)command_queue, 19 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44 + 19, *(void***)command_allocator, 9 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44 + 19 + 9, *(void***)command_list, 60 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44 + 19 + 9 + 60, *(void***)this->m_swapchain, 18 * sizeof(uint64_t));
+		LOG(INFO) << m_swapchain_methods[140];
 
 		device->Release();
 		device = NULL;
+
 		command_queue->Release();
 		command_queue = NULL;
+
 		command_allocator->Release();
 		command_allocator = NULL;
+
 		command_list->Release();
 		command_list = NULL;
+
 		m_swapchain->Release();
 		m_swapchain = NULL;
 

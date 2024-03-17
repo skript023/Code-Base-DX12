@@ -29,10 +29,14 @@ namespace big
 
 	bool renderer::init(IDXGISwapChain3* swapchain)
 	{
+		if (m_init) return true;
+
 		if (SUCCEEDED(swapchain->GetDevice(__uuidof(ID3D12Device), (void**)&m_d3d_device)))
 		{
 			DXGI_SWAP_CHAIN_DESC sd;
 			swapchain->GetDesc(&sd);
+			sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+			sd.OutputWindow = g_pointers->m_hwnd;
 			m_window = sd.OutputWindow;
 
 			m_buffer_count = sd.BufferCount;
@@ -87,8 +91,6 @@ namespace big
 					return false;
 				}
 			}
-
-			if (m_command_queue == nullptr) return false;
 		}
 		else
 		{
@@ -96,6 +98,8 @@ namespace big
 		}
 
 		this->imgui_init();
+
+		if (m_command_queue == nullptr) return false;
 
 		this->m_init = true;
 
