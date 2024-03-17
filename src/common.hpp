@@ -69,7 +69,7 @@
 #endif
 
 #ifdef ELS_ZERO
-#define WINDOW "Els Zero"
+#define WINDOW "Resident Evil 4"
 #endif
 
 namespace big

@@ -21,7 +21,7 @@ namespace big
 		
 		main_batch.run(memory::module(nullptr));
 
-		this->m_hwnd = FindWindow(WINDOW_CLASS, nullptr);
+		this->m_hwnd = FindWindow(nullptr, "Resident Evil 4");
 		if (!this->m_hwnd)
 			throw std::runtime_error("Failed to find the game's window.");
 

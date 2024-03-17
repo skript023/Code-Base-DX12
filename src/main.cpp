@@ -18,7 +18,7 @@ DWORD APIENTRY main_thread(LPVOID)
 {
 	using namespace big;
 
-	while (!FindWindow(WINDOW_CLASS, nullptr))
+	while (!FindWindow(nullptr, "Resident Evil 4"))
 		std::this_thread::sleep_for(1s);
 
 	auto initialization_benchmark = std::make_unique<benchmark>("Initialization Benchmark");
