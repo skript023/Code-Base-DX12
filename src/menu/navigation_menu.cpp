@@ -68,10 +68,10 @@ namespace big
 			ImGui::SameLine();
 			ImGui::SetCursorPos({ 300.f - ImGui::CalcTextSize("Unload").x - ImGui::GetStyle().ItemSpacing.x, ImGui::GetStyle().WindowPadding.y / 2 + ImGui::GetStyle().ItemSpacing.y + (ImGui::CalcTextSize("W").y / 2) });
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.69f, 0.29f, 0.29f, 1.00f));
-			// if (nav_button("Unload"))
-			// {
-			// 	g_running = false;
-			// }
+			if (nav_button("Unload"))
+			{
+				g_running = false;
+			}
 			ImGui::PopStyleColor();
 		}
 	}

@@ -29,80 +29,82 @@ namespace big
 
 	bool renderer::init(IDXGISwapChain3* swapchain)
 	{
-		if (SUCCEEDED(swapchain->GetDevice(__uuidof(ID3D12Device), (void**)&m_d3d_device)))
+		if (!m_init)
 		{
-			DXGI_SWAP_CHAIN_DESC sd;
-			swapchain->GetDesc(&sd);
-			sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-			sd.OutputWindow = g_pointers->m_hwnd;
-			sd.Windowed = ((GetWindowLongPtr(g_pointers->m_hwnd, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
-			m_window = sd.OutputWindow;
-
-			m_buffer_count = sd.BufferCount;
-			m_frame_context = new _FrameContext[m_buffer_count];
-
-			D3D12_DESCRIPTOR_HEAP_DESC descriptor_renderer = {};
-			descriptor_renderer.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			descriptor_renderer.NumDescriptors = m_buffer_count;
-			descriptor_renderer.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-
-			if (m_d3d_device->CreateDescriptorHeap(&descriptor_renderer, IID_PPV_ARGS(&m_descriptor_heap_render)) != S_OK)
-				return false;
-
-			ID3D12CommandAllocator* allocator;
-			if (m_d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)) != S_OK)
-				return false;
-
-			for (size_t i = 0; i < m_buffer_count; i++) 
+			if (SUCCEEDED(swapchain->GetDevice(__uuidof(ID3D12Device), (void**)&m_d3d_device)))
 			{
-				m_frame_context[i].m_command_allocator = allocator;
-			}
+				DXGI_SWAP_CHAIN_DESC sd;
+				swapchain->GetDesc(&sd);
+				sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+				sd.OutputWindow = g_pointers->m_hwnd;
+				sd.Windowed = ((GetWindowLongPtr(g_pointers->m_hwnd, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
+				m_window = sd.OutputWindow;
 
-			if (m_d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, NULL, IID_PPV_ARGS(&m_command_list)) != S_OK ||
-				m_command_list->Close() != S_OK)
-				return false;
+				m_buffer_count = sd.BufferCount;
+				m_frame_context = new _FrameContext[m_buffer_count];
 
-			D3D12_DESCRIPTOR_HEAP_DESC DescriptorBackBuffers;
-			DescriptorBackBuffers.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-			DescriptorBackBuffers.NumDescriptors = m_buffer_count;
-			DescriptorBackBuffers.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-			DescriptorBackBuffers.NodeMask = 1;
+				D3D12_DESCRIPTOR_HEAP_DESC descriptor_renderer = {};
+				descriptor_renderer.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+				descriptor_renderer.NumDescriptors = m_buffer_count;
+				descriptor_renderer.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
-			if (m_d3d_device->CreateDescriptorHeap(&DescriptorBackBuffers, IID_PPV_ARGS(&m_descriptor_heap_backbuffer)) != S_OK)
-				return false;
-
-			const auto rvt_descriptor_size = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-			m_rvt_handle = m_descriptor_heap_backbuffer->GetCPUDescriptorHandleForHeapStart();
-
-			for (size_t i = 0; i < m_buffer_count; i++)
-			{
-				ID3D12Resource* m_back_buffer;
-				m_frame_context[i].m_descriptor_handle = m_rvt_handle;
-				swapchain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_back_buffer);
-				if (m_back_buffer && m_d3d_device)
-				{
-					m_d3d_device->CreateRenderTargetView(m_back_buffer, NULL, m_rvt_handle);
-					m_frame_context[i].m_resource = m_back_buffer;
-					m_rvt_handle.ptr += rvt_descriptor_size;
-				}
-				else
-				{
+				if (m_d3d_device->CreateDescriptorHeap(&descriptor_renderer, IID_PPV_ARGS(&m_descriptor_heap_render)) != S_OK)
 					return false;
+
+				ID3D12CommandAllocator* allocator;
+				if (m_d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)) != S_OK)
+					return false;
+
+				for (size_t i = 0; i < m_buffer_count; i++) 
+				{
+					m_frame_context[i].m_command_allocator = allocator;
+				}
+
+				if (m_d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, NULL, IID_PPV_ARGS(&m_command_list)) != S_OK || m_command_list->Close() != S_OK)
+					return false;
+
+				D3D12_DESCRIPTOR_HEAP_DESC DescriptorBackBuffers;
+				DescriptorBackBuffers.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+				DescriptorBackBuffers.NumDescriptors = m_buffer_count;
+				DescriptorBackBuffers.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+				DescriptorBackBuffers.NodeMask = 1;
+
+				if (m_d3d_device->CreateDescriptorHeap(&DescriptorBackBuffers, IID_PPV_ARGS(&m_descriptor_heap_backbuffer)) != S_OK)
+					return false;
+
+				const auto rvt_descriptor_size = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+				m_rvt_handle = m_descriptor_heap_backbuffer->GetCPUDescriptorHandleForHeapStart();
+
+				for (size_t i = 0; i < m_buffer_count; i++)
+				{
+					ID3D12Resource* m_back_buffer;
+					m_frame_context[i].m_descriptor_handle = m_rvt_handle;
+					swapchain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_back_buffer);
+					if (m_back_buffer && m_d3d_device)
+					{
+						m_d3d_device->CreateRenderTargetView(m_back_buffer, NULL, m_rvt_handle);
+						m_frame_context[i].m_resource = m_back_buffer;
+						m_rvt_handle.ptr += rvt_descriptor_size;
+					}
+					else
+					{
+						return false;
+					}
 				}
 			}
+			else
+			{
+				return false;
+			}
+
+			this->imgui_init();
+
+			this->m_init = true;
+
+			return true;
 		}
-		else
-		{
-			return false;
-		}
 
-		this->imgui_init();
-
-		if (m_command_queue == nullptr) return false;
-
-		this->m_init = true;
-
-		return true;
+		return false;
 	}
 
 	void renderer::imgui_init()
@@ -202,6 +204,8 @@ namespace big
 
 	void renderer::new_frame()
 	{
+		if (m_command_queue == nullptr) return;
+		
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
