@@ -18,7 +18,7 @@ DWORD APIENTRY main_thread(LPVOID)
 {
 	using namespace big;
 
-	while (!FindWindow(nullptr, "Resident Evil 4"))
+	while (!FindWindow(WINDOW_CLASS, WINDOW_NAME))
 		std::this_thread::sleep_for(1s);
 
 	auto initialization_benchmark = std::make_unique<benchmark>("Initialization Benchmark");
@@ -71,7 +71,6 @@ DWORD APIENTRY main_thread(LPVOID)
 
 		auto gui_service_instance  = std::make_unique<gui_service>();
 		auto notification_instance = std::make_unique<notification_service>();
-		auto player_service_instance = std::make_unique<player_service>();
 		LOG(HACKER) << "Service registered.";
 
 		g_script_mgr.add_script(std::make_unique<script>(&gui::script_func));
@@ -100,7 +99,6 @@ DWORD APIENTRY main_thread(LPVOID)
 
 		notification_instance.reset();
 		gui_service_instance.reset();
-		player_service_instance.reset();
 		LOG(HACKER) << "Service unregistered.";
 
 		hooking_instance.reset();

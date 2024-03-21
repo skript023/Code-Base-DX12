@@ -57,7 +57,7 @@ namespace big
 	private:
 		ID3D12Device* m_d3d_device = nullptr;
 		D3D12_CPU_DESCRIPTOR_HANDLE m_rvt_handle;
-		size_t m_buffer_count = -1;
+		uint64_t m_buffer_count = -1;
 		_FrameContext* m_frame_context = nullptr;
 		ID3D12DescriptorHeap* m_descriptor_heap_backbuffer = nullptr;
 		ID3D12DescriptorHeap* m_descriptor_heap_render = nullptr;

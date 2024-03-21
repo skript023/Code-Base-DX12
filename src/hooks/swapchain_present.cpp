@@ -9,6 +9,7 @@ namespace big
 	{
 		if (g_running)
 		{
+			if (!g_renderer->m_command_queue) return g_hooking->m_on_present.get_original<decltype(&swapchain_present)>()(_this, SyncInterval, Flags);
 			if ((g_renderer->m_init || g_renderer->init(_this)))
 				g_renderer->on_present(_this);
 		}

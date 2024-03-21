@@ -5,7 +5,7 @@
 
 namespace big
 {
-	pointers::pointers() : m_base_address(memory::module(nullptr).begin().as<uint64_t>())
+	pointers::pointers() : m_base_address(memory::module(nullptr).begin().as<uint64_t>()), m_resolution(new ScreenResolution(640, 480))
 	{
 		memory::pattern_batch main_batch;
 
@@ -21,7 +21,7 @@ namespace big
 		
 		main_batch.run(memory::module(nullptr));
 
-		this->m_hwnd = FindWindow(nullptr, "Resident Evil 4");
+		this->m_hwnd = FindWindow(WINDOW_CLASS, WINDOW_NAME);
 		if (!this->m_hwnd)
 			throw std::runtime_error("Failed to find the game's window.");
 
@@ -181,6 +181,7 @@ namespace big
 			return false;
 		}
 
+		m_swapchain_methods = (void**)::calloc(150, sizeof(void*));
 		::memcpy(this->m_swapchain_methods, *(void***)device, 44 * sizeof(uint64_t));
 		::memcpy(this->m_swapchain_methods + 44, *(void***)command_queue, 19 * sizeof(uint64_t));
 		::memcpy(this->m_swapchain_methods + 44 + 19, *(void***)command_allocator, 9 * sizeof(uint64_t));

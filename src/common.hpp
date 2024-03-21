@@ -54,22 +54,29 @@
 #include "settings.hpp"
 #include "logger.hpp"
 
-#define DEV
+// #define RESIDENT_EVIL_4
 
-#ifdef DEV
-#define WINDOW_CLASS "gfx_test"
-#define DX9_TEST "Renderer: [DirectX9], Input: [Raw input], 64 bits"
-#define DX11_TEST "Renderer: [DirectX11], Input: [Raw input], 64 bits"
-#define DX12_TEST "Renderer: [DirectX12], Input: [Raw input], 64 bits"
-#define DX9_TEST_32 "Renderer: [DirectX9], Input: [Raw input], 32 bits"
-#define DX11_TEST_32 "Renderer: [DirectX11], Input: [Raw input], 32 bits"
-#define DX12_TEST_32 "Renderer: [DirectX12], Input: [Raw input], 32 bits"
+// #ifdef DEV
+// #define WINDOW_CLASS "gfx_test"
+// #define DX9_TEST "Renderer: [DirectX9], Input: [Raw input], 64 bits"
+// #define DX11_TEST "Renderer: [DirectX11], Input: [Raw input], 64 bits"
+// #define DX12_TEST "Renderer: [DirectX12], Input: [Raw input], 64 bits"
+// #define DX9_TEST_32 "Renderer: [DirectX9], Input: [Raw input], 32 bits"
+// #define DX11_TEST_32 "Renderer: [DirectX11], Input: [Raw input], 32 bits"
+// #define DX12_TEST_32 "Renderer: [DirectX12], Input: [Raw input], 32 bits"
+// #else
+// #define WINDOW_CLASS "Direct3DWindowClass"
+// #endif
+
+#ifdef RESIDENT_EVIL_4
+	#define WINDOW_CLASS nullptr
+	#define WINDOW_NAME "Resident Evil 4"
+#elif defined(VALKYRIE_ELYSIUM)
+	#define WINDOW_CLASS "UnrealWindow"
+	#define WINDOW_NAME nullptr
 #else
-#define WINDOW_CLASS "Direct3DWindowClass"
-#endif
-
-#ifdef ELS_ZERO
-#define WINDOW "Resident Evil 4"
+	#define WINDOW_CLASS "gfx_test"
+	#define WINDOW_NAME "Renderer: [DirectX12], Input: [Raw input], 64 bits"
 #endif
 
 namespace big

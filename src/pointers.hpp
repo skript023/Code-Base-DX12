@@ -20,9 +20,7 @@ namespace big
 		CKTDGUIDialog** m_player_stats;
 		void* m_rest_buff;
 	public:
-		void* m_swapchain_methods[150];
-		void* m_device_methods[120];
-		void* m_context_methods[145];
+		void** m_swapchain_methods = nullptr;
 		IDXGISwapChain* m_swapchain;
 	private:
 		bool get_swapchain();

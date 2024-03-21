@@ -33,12 +33,17 @@ namespace big
 		{
 			if (SUCCEEDED(swapchain->GetDevice(__uuidof(ID3D12Device), (void**)&m_d3d_device)))
 			{
+				ImGui::CreateContext();
+
+				ImGuiIO& io = ImGui::GetIO(); (void)io;
+				ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantTextInput || ImGui::GetIO().WantCaptureKeyboard;
+				io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+				
 				DXGI_SWAP_CHAIN_DESC sd;
 				swapchain->GetDesc(&sd);
 				sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 				sd.OutputWindow = g_pointers->m_hwnd;
 				sd.Windowed = ((GetWindowLongPtr(g_pointers->m_hwnd, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
-				m_window = sd.OutputWindow;
 
 				m_buffer_count = sd.BufferCount;
 				m_frame_context = new _FrameContext[m_buffer_count];
@@ -77,31 +82,20 @@ namespace big
 
 				for (size_t i = 0; i < m_buffer_count; i++)
 				{
-					ID3D12Resource* m_back_buffer;
+					ID3D12Resource* m_back_buffer = nullptr;
 					m_frame_context[i].m_descriptor_handle = m_rvt_handle;
 					swapchain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_back_buffer);
-					if (m_back_buffer && m_d3d_device)
-					{
-						m_d3d_device->CreateRenderTargetView(m_back_buffer, NULL, m_rvt_handle);
-						m_frame_context[i].m_resource = m_back_buffer;
-						m_rvt_handle.ptr += rvt_descriptor_size;
-					}
-					else
-					{
-						return false;
-					}
+					m_d3d_device->CreateRenderTargetView(m_back_buffer, NULL, m_rvt_handle);
+					m_frame_context[i].m_resource = m_back_buffer;
+					m_rvt_handle.ptr += rvt_descriptor_size;
 				}
+
+				this->imgui_init();
+
+				this->m_init = true;
 			}
-			else
-			{
-				return false;
-			}
 
-			this->imgui_init();
-
-			this->m_init = true;
-
-			return true;
+			return m_init;
 		}
 
 		return false;
@@ -129,6 +123,9 @@ namespace big
 
 		ImGui_ImplDX12_Init(m_d3d_device, m_buffer_count, DXGI_FORMAT_R8G8B8A8_UNORM, m_descriptor_heap_render, m_descriptor_heap_render->GetCPUDescriptorHandleForHeapStart(), m_descriptor_heap_render->GetGPUDescriptorHandleForHeapStart());
 		ImGui_ImplWin32_Init(g_pointers->m_hwnd);
+
+		ImGui_ImplDX12_CreateDeviceObjects();
+		ImGui::GetIO().ImeWindowHandle = g_pointers->m_hwnd;
 
 		ImFontConfig font_cfg{};
 		font_cfg.FontDataOwnedByAtlas = false;
@@ -181,15 +178,21 @@ namespace big
 
 	void renderer::rescale(float rel_size)
 	{
-		pre_reset();
-		g_gui->restore_default_style();
+		bool called = false;
+		if (!called)
+		{
+			pre_reset();
+			g_gui->restore_default_style();
 
-		if (rel_size != 1.0f)
-			ImGui::GetStyle().ScaleAllSizes(rel_size);
+			if (rel_size != 1.0f)
+				ImGui::GetStyle().ScaleAllSizes(rel_size);
 
-		ImGui::GetStyle().MouseCursorScale = 1.0f;
-		ImGui::GetIO().FontGlobalScale = rel_size;
-		post_reset();
+			ImGui::GetStyle().MouseCursorScale = 1.0f;
+			ImGui::GetIO().FontGlobalScale = rel_size;
+			post_reset();
+
+			called = true;
+		}
 	}
 
 	void renderer::pre_reset()
@@ -204,8 +207,6 @@ namespace big
 
 	void renderer::new_frame()
 	{
-		if (m_command_queue == nullptr) return;
-		
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
