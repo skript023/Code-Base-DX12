@@ -14,7 +14,7 @@
 
 #include "menu/notification.h"
 #include "menu/navigation_menu.h"
-#include "services/notification/notification_service.hpp"
+#include "notification/notification_service.hpp"
 
 namespace big
 {
