@@ -16,7 +16,7 @@ namespace big
 			D3D12_CPU_DESCRIPTOR_HANDLE m_descriptor_handle;
 		};
 	public:
-		explicit renderer();
+		explicit renderer() = default;
 		~renderer() = default;
 
 		bool init(IDXGISwapChain3* swapchain);

@@ -13,11 +13,6 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 //CW.exe+2D4E21610
 namespace big
 {
-	renderer::renderer()
-	{
-		
-	}
-
 	void renderer::destroy()
 	{
 		ImGui_ImplWin32_Shutdown();
@@ -46,11 +41,19 @@ namespace big
 				descriptor_renderer.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 
 				if (m_d3d_device->CreateDescriptorHeap(&descriptor_renderer, IID_PPV_ARGS(&m_descriptor_heap_render)) != S_OK)
+				{
+					LOG(WARNING) << "Error Create Descriptor Heap";
+
 					return false;
+				}
 
 				ID3D12CommandAllocator* allocator;
 				if (m_d3d_device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&allocator)) != S_OK)
+				{
+					LOG(WARNING) << "Error Create Command Allocator";
+
 					return false;
+				}
 
 				for (size_t i = 0; i < m_buffer_count; i++) 
 				{
@@ -58,7 +61,11 @@ namespace big
 				}
 
 				if (m_d3d_device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, allocator, NULL, IID_PPV_ARGS(&m_command_list)) != S_OK || m_command_list->Close() != S_OK)
+				{
+					LOG(WARNING) << "Error Create Command List";
+
 					return false;
+				}
 
 				D3D12_DESCRIPTOR_HEAP_DESC DescriptorBackBuffers;
 				DescriptorBackBuffers.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
@@ -67,7 +74,11 @@ namespace big
 				DescriptorBackBuffers.NodeMask = 1;
 
 				if (m_d3d_device->CreateDescriptorHeap(&DescriptorBackBuffers, IID_PPV_ARGS(&m_descriptor_heap_backbuffer)) != S_OK)
+				{
+					LOG(WARNING) << "Error Create Descriptor Heap";
+
 					return false;
+				}
 
 				const auto rvt_descriptor_size = m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 				m_rvt_handle = m_descriptor_heap_backbuffer->GetCPUDescriptorHandleForHeapStart();
