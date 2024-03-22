@@ -58,7 +58,6 @@ DWORD APIENTRY main_thread(LPVOID)
 
 		auto renderer_instance = std::make_unique<renderer>();
 		LOG(HACKER) << "Renderer initialized.";
-		auto gui_instance = std::make_unique<gui>();
 
 		auto fiber_pool_instance = std::make_unique<fiber_pool>(10);
 		LOG(HACKER) << "Fiber pool initialized.";
@@ -78,6 +77,8 @@ DWORD APIENTRY main_thread(LPVOID)
 
 		g_hooking->enable();
 		LOG(HACKER) << "Hooking enabled.";
+
+		auto gui_instance = std::make_unique<gui>();
 
 		initialization_benchmark->get_runtime();
 		initialization_benchmark->reset();
@@ -113,6 +114,7 @@ DWORD APIENTRY main_thread(LPVOID)
 		thread_pool_instance.reset();
 		LOG(HACKER) << "Thread Pool uninitialized.";
 
+		g_renderer.destroy();
 		renderer_instance.reset();
 		LOG(HACKER) << "Renderer uninitialized.";
 

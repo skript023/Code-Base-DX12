@@ -15,16 +15,14 @@ namespace big
 {
 	renderer::renderer()
 	{
-		g_renderer = this;
+		
 	}
 
-	renderer::~renderer()
+	void renderer::destroy()
 	{
 		ImGui_ImplWin32_Shutdown();
 		ImGui_ImplDX12_Shutdown();
 		ImGui::DestroyContext();
-
-		g_renderer = nullptr;
 	}
 
 	bool renderer::init(IDXGISwapChain3* swapchain)
@@ -33,12 +31,6 @@ namespace big
 		{
 			if (SUCCEEDED(swapchain->GetDevice(__uuidof(ID3D12Device), (void**)&m_d3d_device)))
 			{
-				ImGui::CreateContext();
-
-				ImGuiIO& io = ImGui::GetIO(); (void)io;
-				ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantTextInput || ImGui::GetIO().WantCaptureKeyboard;
-				io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-				
 				DXGI_SWAP_CHAIN_DESC sd;
 				swapchain->GetDesc(&sd);
 				sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
@@ -124,9 +116,6 @@ namespace big
 		ImGui_ImplDX12_Init(m_d3d_device, m_buffer_count, DXGI_FORMAT_R8G8B8A8_UNORM, m_descriptor_heap_render, m_descriptor_heap_render->GetCPUDescriptorHandleForHeapStart(), m_descriptor_heap_render->GetGPUDescriptorHandleForHeapStart());
 		ImGui_ImplWin32_Init(g_pointers->m_hwnd);
 
-		ImGui_ImplDX12_CreateDeviceObjects();
-		ImGui::GetIO().ImeWindowHandle = g_pointers->m_hwnd;
-
 		ImFontConfig font_cfg{};
 		font_cfg.FontDataOwnedByAtlas = false;
 		std::strcpy(font_cfg.Name, "Rubik");
@@ -178,21 +167,15 @@ namespace big
 
 	void renderer::rescale(float rel_size)
 	{
-		bool called = false;
-		if (!called)
-		{
-			pre_reset();
-			g_gui->restore_default_style();
+		pre_reset();
+		g_gui->restore_default_style();
 
-			if (rel_size != 1.0f)
-				ImGui::GetStyle().ScaleAllSizes(rel_size);
+		if (rel_size != 1.0f)
+			ImGui::GetStyle().ScaleAllSizes(rel_size);
 
-			ImGui::GetStyle().MouseCursorScale = 1.0f;
-			ImGui::GetIO().FontGlobalScale = rel_size;
-			post_reset();
-
-			called = true;
-		}
+		ImGui::GetStyle().MouseCursorScale = 1.0f;
+		ImGui::GetIO().FontGlobalScale = rel_size;
+		post_reset();
 	}
 
 	void renderer::pre_reset()

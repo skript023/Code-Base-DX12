@@ -5,7 +5,7 @@
 
 namespace big
 {
-	pointers::pointers() : m_base_address(memory::module(nullptr).begin().as<uint64_t>()), m_resolution(new ScreenResolution(640, 480))
+	pointers::pointers() : m_base_address(memory::module(nullptr).begin().as<uint64_t>()), m_resolution(new ScreenResolution(1920, 1080))
 	{
 		memory::pattern_batch main_batch;
 

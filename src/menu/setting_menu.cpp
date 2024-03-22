@@ -18,7 +18,7 @@ namespace big
     {
 		ImGui::Text("UI Scale");
 		if (ImGui::SliderFloat("##gui-scale", &g_settings->window.gui_scale, 0.75f, 1.5f, "%.2f"))
-			g_renderer->rescale(g_settings->window.gui_scale);
+			g_renderer.rescale(g_settings->window.gui_scale);
 
 		ImGui::Text("UI Color");
 		static ImVec4 col_gui = ImGui::ColorConvertU32ToFloat4(g_settings->window.background_color);

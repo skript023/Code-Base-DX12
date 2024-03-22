@@ -18,25 +18,47 @@
 
 namespace big
 {
+	/**
+	 * @brief The later an entry comes in this enum to higher up it comes in the z-index.
+	 */
+	enum eRenderPriority
+	{
+		// low priority
+		ESP,
+		CONTEXT_MENU,
+
+		// medium priority
+		MENU = 0x1000,
+
+		// high priority
+		INFO_OVERLAY = 0x2000,
+		CMD_EXECUTOR,
+
+		ONBOARDING = 0x3000,
+
+		// should remain in a league of its own
+		NOTIFICATIONS = 0x4000,
+	};
+
 	gui::gui() : m_opened(true), m_override_mouse(false)
 	{
-		g_renderer->add_dx_callback(draw::notifications, -2);
+		g_renderer.add_dx_callback(draw::notifications, NOTIFICATIONS);
 
-		g_renderer->add_dx_callback(
+		g_renderer.add_dx_callback(
 		    [this] {
 				dx_on_opened();
 		    },
-		    -3);
+		    eRenderPriority::MENU);
 
-		g_renderer->add_wndproc_callback([this](HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+		g_renderer.add_wndproc_callback([this](HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 			wndproc(hwnd, msg, wparam, lparam);
 		});
 
-		g_renderer->add_dx_callback([this]{ dx_init(); }, 1);
+		dx_init();
 		
 		g_gui = this;
 
-		g_renderer->add_dx_callback([this]{ g_renderer->rescale(g_settings->window.gui_scale); }, 0);
+		g_renderer.rescale(g_settings->window.gui_scale);
 	}
 
 	gui::~gui()
@@ -148,7 +170,8 @@ namespace big
 		auto frame_active_color =
 			ImVec4(frame_color.x + 0.30f, frame_color.y + 0.30f, frame_color.z + 0.30f, button_color.w);
 
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ColorConvertU32ToFloat4(g_settings->window.background_color));
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ColorConvertU32ToFloat4(g_settings->window.color));
+		ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(g_settings->window.background_color));
 		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(g_settings->window.text_color));
 		ImGui::PushStyleColor(ImGuiCol_Button, button_color);
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, button_hovered_color);
@@ -172,11 +195,11 @@ namespace big
 	{
 		if (this->m_opened)
 		{
-			ImGui::PushStyleColor(ImGuiCol_WindowBg, ImGui::ColorConvertU32ToFloat4(g_settings->window.color));
+			push_theme_colors();
 			navigation::header();
 			navigation::render_menu();
 			navigation::active_view();
-			ImGui::PopStyleColor();
+			pop_theme_colors();
 		}
 	}
 

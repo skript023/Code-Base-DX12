@@ -15,11 +15,6 @@ namespace big
 
         ImGui::Text("%s", std::ctime(&date));
 
-        auto is_character_selection = g_player_service->players().get() == nullptr;
-
-        if (!is_character_selection)
-            ImGui::Text("Health : %f/%f", g_player_service->players()->get_player_health(), els_util::detail_stats()->m_health);
-
         ImGui::BeginGroup();
 
         ImGui::Checkbox("Rapid Skill", &g_settings->self.rapid_skill);

@@ -17,8 +17,10 @@ namespace big
 		};
 	public:
 		explicit renderer();
-		~renderer();
+		~renderer() = default;
 
+		bool init(IDXGISwapChain3* swapchain);
+		void destroy();
 		/**
 		 * @brief Add a callback function to draw your ImGui content in
 		 * 
@@ -34,7 +36,6 @@ namespace big
 		 * @param callback Function
 		 */
 		void add_wndproc_callback(wndproc_callback callback);
-		bool init(IDXGISwapChain3* swapchain);
 		void imgui_init();
 
 		void on_present(IDXGISwapChain3* swapchain);
@@ -66,5 +67,5 @@ namespace big
 		std::vector<wndproc_callback> m_wndproc_callbacks;
 	};
 
-	inline renderer *g_renderer{};
+	inline renderer g_renderer = renderer();
 }
