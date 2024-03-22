@@ -205,7 +205,7 @@ namespace big
 
 	void gui::script_init()
 	{
-		g_notification_service->success("Welcome", "Elsword Bot Successfully Injected. Press insert to open");
+		g_notification_service->success("Welcome", "Hack injected successfully. Press insert to open");
 	}
 
 	void gui::script_on_tick()
