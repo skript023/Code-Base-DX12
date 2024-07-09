@@ -5,18 +5,29 @@
 
 namespace big
 {
-	pointers::pointers() : m_base_address(memory::module(nullptr).begin().as<uint64_t>()), m_resolution(new ScreenResolution(1920, 1080))
+	pointers::pointers() : 
+		m_base_address(memory::module(nullptr).begin().as<uint64_t>()),
+		m_resolution(new ScreenResolution(1920, 1080))
 	{
 		memory::pattern_batch main_batch;
 
 		if (!this->get_swapchain())
-			LOG(WARNING) << "Failed get swapchain";
-
-		// m_resolution = (ScreenResolution*)(m_base_address + 0x3F54D58);//3F54D60
+			throw std::runtime_error("Swapchain not found");
 		
-		// main_batch.add("Return Address", "FF 23", [this](memory::handle ptr)
+		main_batch.add("Return Address", "FF 23", [this](memory::handle ptr)
+		{
+			m_return_address = ptr.as<void*>();
+		});
+		
+		
+		// main_batch.add("Ignore Material", "40 57 48 83 EC 20 8B F9 83 FA 02", [this](memory::handle ptr)
 		// {
 		// 	m_return_address = ptr.as<void*>();
+		// });
+		
+		// main_batch.add("Resolution", "89 0D ? ? ? ? 8D 42 ? 48 63 ? 85 C0 78 ? 48 8B ? 48 C1 E3 ? 0F 1F ? ? ? 48 8B ? ? ? ? ? 39 6C", [this](memory::handle ptr)
+		// {
+		// 	m_resolution = ptr.add(2).rip().add(27).as<ScreenResolution*>();
 		// });
 		
 		main_batch.run(memory::module(nullptr));

@@ -54,7 +54,7 @@
 #include "settings.hpp"
 #include "logger.hpp"
 
-#define VALKYRIE_ELYSIUM
+#define RESIDENT_EVIL_4
 
 // #ifdef DEV
 // #define WINDOW_CLASS "gfx_test"

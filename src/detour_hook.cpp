@@ -12,7 +12,7 @@ namespace big
 		m_target(target),
 		m_detour(detour)
 	{
-		fix_hook_address();
+		// fix_hook_address();
 
 		if (auto status = MH_CreateHook(m_target, m_detour, &m_original); status == MH_OK)
 		{

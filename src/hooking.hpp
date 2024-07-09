@@ -20,7 +20,6 @@ namespace big
 
 		static LRESULT wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 		static BOOL set_cursor_pos(int x, int y);
-		static void __fastcall rest_buff(LocalPlayer* a1, float a2);
 	};
 
 	struct minhook_keepalive
