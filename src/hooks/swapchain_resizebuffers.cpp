@@ -9,13 +9,13 @@ namespace big
 	{
 		if (g_running)
 		{
-			g_renderer.pre_reset();
+			g_renderer->pre_reset();
 
 			auto result = g_hooking->m_resizebuffers.get_original<decltype(&swapchain_resizebuffers)>()(this_, buffer_count, width, height, new_format, swapchain_flags);
 
 			if (SUCCEEDED(result))
 			{
-				g_renderer.post_reset();
+				g_renderer->post_reset(this_);
 			}
 
 			return result;

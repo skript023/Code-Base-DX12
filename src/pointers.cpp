@@ -192,28 +192,28 @@ namespace big
 			return false;
 		}
 
-		m_swapchain_methods = (void**)::calloc(150, sizeof(void*));
-		::memcpy(this->m_swapchain_methods, *(void***)device, 44 * sizeof(uint64_t));
-		::memcpy(this->m_swapchain_methods + 44, *(void***)command_queue, 19 * sizeof(uint64_t));
-		::memcpy(this->m_swapchain_methods + 44 + 19, *(void***)command_allocator, 9 * sizeof(uint64_t));
-		::memcpy(this->m_swapchain_methods + 44 + 19 + 9, *(void***)command_list, 60 * sizeof(uint64_t));
-		::memcpy(this->m_swapchain_methods + 44 + 19 + 9 + 60, *(void***)this->m_swapchain, 18 * sizeof(uint64_t));
+		m_swapchain_methods = (uint64_t*)::calloc(150, sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods, *(uint64_t**)device, 44 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44, *(uint64_t**)command_queue, 19 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44 + 19, *(uint64_t**)command_allocator, 9 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44 + 19 + 9, *(uint64_t**)command_list, 60 * sizeof(uint64_t));
+		::memcpy(this->m_swapchain_methods + 44 + 19 + 9 + 60, *(uint64_t**)this->m_swapchain, 18 * sizeof(uint64_t));
 		LOG(INFO) << m_swapchain_methods[140];
 
 		device->Release();
-		device = NULL;
+		device = nullptr;
 
 		command_queue->Release();
-		command_queue = NULL;
+		command_queue = nullptr;
 
 		command_allocator->Release();
-		command_allocator = NULL;
+		command_allocator = nullptr;
 
 		command_list->Release();
-		command_list = NULL;
+		command_list = nullptr;
 
 		m_swapchain->Release();
-		m_swapchain = NULL;
+		m_swapchain = nullptr;
 
 		::DestroyWindow(this->m_window);
 		::UnregisterClass(window_class.lpszClassName, window_class.hInstance);

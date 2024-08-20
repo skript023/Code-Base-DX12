@@ -35,7 +35,7 @@ add_library(ResidentEvil MODULE "${SRC_MAIN}")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(TARGET ResidentEvil PROPERTY CXX_STANDARD 23) # 23 Because std::format is not avalible in std:c++20 for some reason. Maybe it's because i use v142 toolset.
-set_property(TARGET ResidentEvil PROPERTY ISPC_INSTRUCTION_SETS avx2-i32x4)
+# set_property(TARGET ResidentEvil PROPERTY ISPC_INSTRUCTION_SETS avx2-i32x4)
 
 source_group(TREE ${SRC_DIR} PREFIX "src" FILES ${SRC_MAIN} )
 

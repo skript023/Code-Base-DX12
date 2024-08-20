@@ -34,11 +34,6 @@ namespace big
 			ImFont* font_small = nullptr;
 			ImFont* font_icon = nullptr;
 
-			ImU32 background_color = 3696311571;
-			ImU32 text_color = 4294967295;
-			ImU32 button_color = 2947901213;
-			ImU32 frame_color = 2942518340;
-
 			bool switched_view = true;
 		};
 

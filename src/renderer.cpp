@@ -5,6 +5,7 @@
 #include "fonts/font_list.hpp"
 #include "fonts/icon_list.hpp"
 
+#include <imgui.h>
 #include <backends/imgui_impl_dx12.h>
 #include <backends/imgui_impl_win32.h>
 #include <imgui_internal.h>
@@ -13,11 +14,72 @@ IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARA
 //CW.exe+2D4E21610
 namespace big
 {
-	void renderer::destroy()
+	renderer::renderer()
+	{
+		g_renderer = this;
+	}
+
+	renderer::~renderer()
 	{
 		ImGui_ImplWin32_Shutdown();
 		ImGui_ImplDX12_Shutdown();
 		ImGui::DestroyContext();
+
+		m_d3d_device->Release();
+		m_command_queue->Release();
+		m_command_list->Release();
+
+		g_renderer = nullptr;
+	}
+
+	void renderer::on_present(IDXGISwapChain3* swapchain)
+	{
+		if (g_gui.m_opened)
+		{
+			ImGui::GetIO().MouseDrawCursor = true;
+			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+		}
+		else
+		{
+			ImGui::GetIO().MouseDrawCursor = false;
+			ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+		}
+
+		ImGui_ImplDX12_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		g_gui.dx_on_tick();
+
+		if (g_gui.m_opened)
+		{
+			g_gui.dx_on_opened();
+		}
+
+		_FrameContext& current_frame_context = m_frame_context[swapchain->GetCurrentBackBufferIndex()];
+		current_frame_context.m_command_allocator->Reset();
+
+		D3D12_RESOURCE_BARRIER barrier;
+		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		barrier.Transition.pResource = current_frame_context.m_resource;
+		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
+
+		m_command_list->Reset(current_frame_context.m_command_allocator, nullptr);
+		m_command_list->ResourceBarrier(1, &barrier);
+		m_command_list->OMSetRenderTargets(1, &current_frame_context.m_descriptor_handle, FALSE, nullptr);
+		m_command_list->SetDescriptorHeaps(1, &m_descriptor_heap_render);
+
+		ImGui::Render();
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_command_list);
+
+		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+		m_command_list->ResourceBarrier(1, &barrier);
+		m_command_list->Close();
+		m_command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList* const*>(&m_command_list));
 	}
 
 	bool renderer::init(IDXGISwapChain3* swapchain)
@@ -26,13 +88,12 @@ namespace big
 		{
 			if (SUCCEEDED(swapchain->GetDevice(__uuidof(ID3D12Device), (void**)&m_d3d_device)))
 			{
-				DXGI_SWAP_CHAIN_DESC sd;
-				swapchain->GetDesc(&sd);
-				sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-				sd.OutputWindow = g_pointers->m_hwnd;
-				sd.Windowed = ((GetWindowLongPtr(g_pointers->m_hwnd, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
+				swapchain->GetDesc(&m_swapchain_desc);
+				m_swapchain_desc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+				m_swapchain_desc.OutputWindow = g_pointers->m_hwnd;
+				m_swapchain_desc.Windowed = ((GetWindowLongPtr(g_pointers->m_hwnd, GWL_STYLE) & WS_POPUP) != 0) ? false : true;
 
-				m_buffer_count = sd.BufferCount;
+				m_buffer_count = m_swapchain_desc.BufferCount;
 				m_frame_context = new _FrameContext[m_buffer_count];
 
 				D3D12_DESCRIPTOR_HEAP_DESC descriptor_renderer = {};
@@ -88,17 +149,18 @@ namespace big
 					ID3D12Resource* m_back_buffer = nullptr;
 					m_frame_context[i].m_descriptor_handle = m_rvt_handle;
 					swapchain->GetBuffer(i, __uuidof(ID3D12Resource), (void**)&m_back_buffer);
-					m_d3d_device->CreateRenderTargetView(m_back_buffer, NULL, m_rvt_handle);
+					m_d3d_device->CreateRenderTargetView(m_back_buffer, nullptr, m_rvt_handle);
 					m_frame_context[i].m_resource = m_back_buffer;
 					m_rvt_handle.ptr += rvt_descriptor_size;
 				}
 
 				this->imgui_init();
 
-				this->m_init = true;
 			}
 
-			return m_init;
+			this->m_init = true;
+
+			return true;
 		}
 
 		return false;
@@ -126,6 +188,7 @@ namespace big
 
 		ImGui_ImplDX12_Init(m_d3d_device, m_buffer_count, DXGI_FORMAT_R8G8B8A8_UNORM, m_descriptor_heap_render, m_descriptor_heap_render->GetCPUDescriptorHandleForHeapStart(), m_descriptor_heap_render->GetGPUDescriptorHandleForHeapStart());
 		ImGui_ImplWin32_Init(g_pointers->m_hwnd);
+		ImGui_ImplDX12_CreateDeviceObjects();
 
 		ImFontConfig font_cfg{};
 		font_cfg.FontDataOwnedByAtlas = false;
@@ -141,98 +204,64 @@ namespace big
 		merge_icon_with_latest_font(17.f, false);
 
 		m_monospace_font = ImGui::GetIO().Fonts->AddFontDefault();
-	}
 
-	bool renderer::add_dx_callback(dx_callback callback, std::uint32_t priority)
-	{
-		if (!m_dx_callbacks.insert({priority, callback}).second)
-		{
-			LOG(WARNING) << "Duplicate priority given on DX Callback!";
+		g_gui.dx_init();
 
-			return false;
-		}
-		return true;
-	}
-
-	void renderer::add_wndproc_callback(wndproc_callback callback)
-	{
-		m_wndproc_callbacks.emplace_back(callback);
-	}
-
-	void renderer::wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
-	{
-		for (const auto& cb : m_wndproc_callbacks)
-			cb(hwnd, msg, wparam, lparam);
-			
-
-		ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
-	}
-
-	void renderer::on_present(IDXGISwapChain3* swapchain)
-	{
-		this->new_frame();
-		for (const auto& cb : m_dx_callbacks | std::views::values)
-			cb();
-		this->end_frame(swapchain);
-	}
-
-	void renderer::rescale(float rel_size)
-	{
-		pre_reset();
-		g_gui->restore_default_style();
-
-		if (rel_size != 1.0f)
-			ImGui::GetStyle().ScaleAllSizes(rel_size);
-
-		ImGui::GetStyle().MouseCursorScale = 1.0f;
-		ImGui::GetIO().FontGlobalScale = rel_size;
-		post_reset();
+		LOG(INFO) << "Swapchain initialized.";
 	}
 
 	void renderer::pre_reset()
 	{
 		ImGui_ImplDX12_InvalidateDeviceObjects();
+		for (size_t i{}; i != m_swapchain_desc.BufferCount; ++i)
+		{
+			m_frame_context[i].m_resource->Release();
+		}
 	}
 
-	void renderer::post_reset()
+	void renderer::post_reset(IDXGISwapChain3* this_)
 	{
 		ImGui_ImplDX12_CreateDeviceObjects();
+		const auto RTVDescriptorSize{m_d3d_device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV)};
+		D3D12_CPU_DESCRIPTOR_HANDLE RTVHandle{m_descriptor_heap_backbuffer->GetCPUDescriptorHandleForHeapStart()};
+		for (size_t i{}; i != m_swapchain_desc.BufferCount; ++i)
+		{
+			comptr<ID3D12Resource> backbuffer{};
+			m_frame_context[i].m_descriptor_handle = RTVHandle;
+			this_->GetBuffer(i, __uuidof(ID3D12Resource), (void**)backbuffer.GetAddressOf());
+			m_d3d_device->CreateRenderTargetView(backbuffer.Get(), nullptr, RTVHandle);
+			m_frame_context[i].m_resource = backbuffer.Get();
+			RTVHandle.ptr += RTVDescriptorSize;
+		}
 	}
 
-	void renderer::new_frame()
+	void renderer::wndproc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	{
-		ImGui_ImplDX12_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-	}
+		if (msg == WM_KEYUP && wparam == VK_INSERT)
+		{
+			//Persist and restore the cursor position between menu instances.
+			static POINT cursor_coords{};
+			if (g_gui.m_opened)
+			{
+				GetCursorPos(&cursor_coords);
+			}
+			else if (cursor_coords.x + cursor_coords.y != 0)
+			{
+				SetCursorPos(cursor_coords.x, cursor_coords.y);
+			}
 
-	void renderer::end_frame(IDXGISwapChain3* swapchain)
-	{
-		ImGui::EndFrame();
-		_FrameContext& current_frame_context = m_frame_context[swapchain->GetCurrentBackBufferIndex()];
-		current_frame_context.m_command_allocator->Reset();
+			g_gui.m_opened ^= true;
+		}
+		if (msg == WM_QUIT)
+		{
+			g_running = false;
+		}
+			
 
-		D3D12_RESOURCE_BARRIER barrier;
-		barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-		barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
-		barrier.Transition.pResource = current_frame_context.m_resource;
-		barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
-
-		m_command_list->Reset(current_frame_context.m_command_allocator, nullptr);
-		m_command_list->ResourceBarrier(1, &barrier);
-		m_command_list->OMSetRenderTargets(1, &current_frame_context.m_descriptor_handle, FALSE, nullptr);
-		m_command_list->SetDescriptorHeaps(1, &m_descriptor_heap_render);
-
-		ImGui::Render();
-		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), m_command_list);
-
-		barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-		m_command_list->ResourceBarrier(1, &barrier);
-		m_command_list->Close();
-		m_command_queue->ExecuteCommandLists(1, reinterpret_cast<ID3D12CommandList* const*>(&m_command_list));
+		if (g_gui.m_opened)
+		{
+			ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam);
+		}
 	}
 
 	void renderer::merge_icon_with_latest_font(float font_size, bool FontDataOwnedByAtlas)

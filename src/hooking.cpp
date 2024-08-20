@@ -12,9 +12,9 @@
 namespace big
 {
 	hooking::hooking() :
-		m_on_present("Swapchain Present", g_pointers->m_swapchain_methods[hooks::present_index], &hooks::swapchain_present),
-		m_resizebuffers("Swapchain Resizebuffers", g_pointers->m_swapchain_methods[hooks::resizebuffer_index], &hooks::swapchain_resizebuffers),
-		m_command_queue("Swapchain Command List", g_pointers->m_swapchain_methods[hooks::execute_command_list], &hooks::swapchain_execute_command_list),
+		m_on_present("Swapchain Present", (void*)g_pointers->m_swapchain_methods[hooks::present_index], &hooks::swapchain_present),
+		m_resizebuffers("Swapchain Resizebuffers", (void*)g_pointers->m_swapchain_methods[hooks::resizebuffer_index], &hooks::swapchain_resizebuffers),
+		m_command_queue("Swapchain Command List", (void*)g_pointers->m_swapchain_methods[hooks::execute_command_list], &hooks::swapchain_execute_command_list),
 		m_set_cursor_pos_hook("SetCursorPos", memory::module("user32.dll").get_export("SetCursorPos").as<void*>(), &hooks::set_cursor_pos)
 	{
 		g_hooking = this;
@@ -32,7 +32,7 @@ namespace big
 	{
 		m_command_queue.enable();
 		m_on_present.enable();
-		m_resizebuffers.enable();
+		// m_resizebuffers.enable();
 		m_og_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&hooks::wndproc)));
 		m_set_cursor_pos_hook.enable();
 
@@ -45,7 +45,7 @@ namespace big
 
 		m_set_cursor_pos_hook.disable();
 		SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_og_wndproc));
-		m_resizebuffers.disable();
+		// m_resizebuffers.disable();
 		m_on_present.disable();
 		m_command_queue.disable();
 	}
@@ -64,15 +64,18 @@ namespace big
 	{
 		if (g_running)
 		{
-			g_renderer.wndproc(hwnd, msg, wparam, lparam);
+			g_renderer->wndproc(hwnd, msg, wparam, lparam);
+
+			if (g_gui.m_opened)
+			    return 1;
 		}
 
-		return CallWindowProcW(g_hooking->m_og_wndproc, hwnd, msg, wparam, lparam);
+		return CallWindowProc(g_hooking->m_og_wndproc, hwnd, msg, wparam, lparam);
 	}
 
 	BOOL hooks::set_cursor_pos(int x, int y)
 	{
-		if (g_gui->is_open())
+		if (g_gui.m_opened)
 			return true;
 
 		return g_hooking->m_set_cursor_pos_hook.get_original<decltype(&set_cursor_pos)>()(x, y);

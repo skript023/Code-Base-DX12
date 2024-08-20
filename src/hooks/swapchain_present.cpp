@@ -7,11 +7,12 @@ namespace big
 {
 	HRESULT APIENTRY hooks::swapchain_present(IDXGISwapChain3* _this, UINT SyncInterval, UINT Flags)
 	{
+		if (g_renderer->m_command_queue == nullptr) return g_hooking->m_on_present.get_original<decltype(&swapchain_present)>()(_this, SyncInterval, Flags);
 		if (g_running)
 		{
-			if (g_renderer.m_init || g_renderer.init(_this))
+			if (g_renderer->m_init || g_renderer->init(_this))
 			{
-				g_renderer.on_present(_this);
+				g_renderer->on_present(_this);
 			}
 		}
 

@@ -78,8 +78,6 @@ DWORD APIENTRY main_thread(LPVOID)
 		g_hooking->enable();
 		LOG(HACKER) << "Hooking enabled.";
 
-		auto gui_instance = std::make_unique<gui>();
-
 		initialization_benchmark->get_runtime();
 		initialization_benchmark->reset();
 		initialization_benchmark.reset();
@@ -87,7 +85,7 @@ DWORD APIENTRY main_thread(LPVOID)
 		while (g_running)
 		{
 			g_script_mgr.tick();
-			std::this_thread::sleep_for(2s);
+			std::this_thread::sleep_for(1s);
 		}
 
 		g_hooking->disable();
@@ -114,7 +112,6 @@ DWORD APIENTRY main_thread(LPVOID)
 		thread_pool_instance.reset();
 		LOG(HACKER) << "Thread Pool uninitialized.";
 
-		g_renderer.destroy();
 		renderer_instance.reset();
 		LOG(HACKER) << "Renderer uninitialized.";
 
